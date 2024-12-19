@@ -1,1 +1,1 @@
-# Whiteboard-Application
+# Mind-Board
