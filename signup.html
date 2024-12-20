@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign Up</title>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        font-family: "Arial", sans-serif;
+        background: linear-gradient(135deg, #09030f, #2575fc);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        flex-direction: column;
+      }
+
+      .form-container {
+        background-image: url('image.png');
+        border-radius: 15px;
+        padding: 40px;
+        width: 100%;
+        overflow-y: auto;
+        max-width: 450px;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+      }
+      
+      .form-container form {
+        background-color: #fff;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .form-container h2 {
+        text-align: center;
+        color: #333;
+        font-size: 34px;
+        margin-bottom: 20px;
+      }
+
+      label {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 5px;
+        color: #333;
+      }
+
+      input[type="text"],
+      input[type="email"],
+      input[type="password"] {
+        width: 100%;
+        padding: 18px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 18px;
+        transition: border-color 0.3s;
+      }
+
+      input[type="text"]:focus,
+      input[type="email"]:focus,
+      input[type="password"]:focus {
+        border-color: #4facfe;
+        outline: none;
+      }
+     
+
+      input[type="submit"] {
+        background: #4facfe;
+        color: #fff;
+        padding: 12px;
+        border: none;
+        border-radius: 5px;
+        font-size: 20px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+
+      input[type="submit"]:hover {
+        background: #00c6ff;
+      }
+
+      .form-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .form-footer a {
+        text-decoration: none;
+        font-size: 14px;
+        color: #4facfe;
+        font-weight: bold;
+        transition: color 0.3s;
+      }
+
+      .form-footer a:hover {
+        color: #2b00ff;
+      }
+
+      .form-container div {
+        display: flex;
+        flex-direction: column;
+      }
+
+      @media (max-width: 768px) {
+        .form-container {
+          padding: 20px;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+          font-size: 12px;
+        }
+
+        input[type="submit"] {
+          font-size: 14px;
+        }
+
+        .form-footer a {
+          font-size: 12px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="form-container">
+      <form id="userInputForm">
+        <h2>Sign Up</h2>
+
+        <div>
+          <label for="name">Name:</label>
+          <input type="text" id="name" name="name" placeholder="Enter name" />
+        </div>
+
+        <div>
+          <label for="email">Email:</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            placeholder="Enter your email"
+          />
+        </div>
+
+        <div>
+          <label for="password">Password:</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Enter your password"
+          />
+        </div>
+
+        <div class="form-footer">
+          <input type="submit" id="submit" name="submit" value="Sign Up" />
+          <a href="./login.html">Login</a>
+        </div>
+      </form>
+    </div>
+  </body>
+</html>
+
+<script>
+  let name = document.getElementById("name");
+  let email = document.getElementById("email");
+  let password = document.getElementById("password");
+  let userInputForm = document.getElementById("userInputForm");
+
+  // user input
+  userInputForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    let userName = name.value;
+    let userEmail = email.value;
+    let userPassword = password.value;
+
+    if (userName && userEmail && userPassword) {
+      createUser(userName, userEmail, userPassword);
+    } else {
+      alert("Please fill out all fields.");
+    }
+  });
+
+  // create User
+  async function createUser(name, email, password) {
+    try {
+      let response = await fetch(
+        `https://whiteboard-application-f3c2c-default-rtdb.firebaseio.com/users.json`
+      );
+      let users = await response.json();
+
+      if (!users || typeof users !== "object") {
+        users = {};
+      }
+
+      let emailExists = Object.values(users).some(
+        (user) => user && typeof user === "object" && user.email === email
+      );
+
+      if (emailExists) {
+        alert("This email is already registered.");
+        return;
+      }
+
+      let ids = Object.values(users)
+        .filter(
+          (user) =>
+            user && typeof user === "object" && typeof user.id === "number"
+        )
+        .map((user) => user.id);
+
+      let nextId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
+
+      let newUser = {
+        email: email,
+        id: nextId,
+        name: name,
+        password: password,
+        data: [],
+      };
+
+      let postResponse = await fetch(
+        `https://whiteboard-application-f3c2c-default-rtdb.firebaseio.com/users.json`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newUser),
+        }
+      );
+
+      let postData = await postResponse.json();
+      console.log("User created successfully");
+      alert("User created successfully");
+      window.location.href = `/home.html`;
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  }
+</script>

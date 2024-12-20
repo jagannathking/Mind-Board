@@ -12,7 +12,8 @@ let lineWidth = 2;
 let strokeColor = '#000000';
 let startX, startY;
 let snapshot; // Snapshot to save canvas state for shapes
-let scale = 1;
+let isLocked = false;
+
 
 // Update line width and color
 document.getElementById('line-width').addEventListener('change', (e) => {
@@ -47,12 +48,79 @@ function setTool(selectedTool) {
     }
 }
 
+document.getElementById('lock-toggle').addEventListener('click', () => {
+    isLocked = !isLocked;
+
+    // Update button icon and title
+    const lockButton = document.getElementById('lock-toggle');
+    if (isLocked) {
+        lockButton.innerHTML = '<i class="fas fa-lock"></i>';
+        lockButton.title = 'Lock Drawing'; // Indicate canvas is locked
+
+        // Disable all buttons except lock button
+        const buttons = document.querySelectorAll('#toolbar button');
+        buttons.forEach(button => {
+            if (button !== lockButton) { // Exclude the lock button
+                button.style.cursor = 'not-allowed';
+                button.disabled = true; // Disable buttons when locked
+            }
+        });
+    } else {
+        lockButton.innerHTML = '<i class="fas fa-lock-open"></i>';
+        lockButton.title = 'Unlock Drawing'; // Indicate canvas is unlocked
+
+        // Enable all buttons except lock button
+        const buttons = document.querySelectorAll('#toolbar button');
+        buttons.forEach(button => {
+            if (button !== lockButton) { // Exclude the lock button
+                button.style.cursor = 'pointer'; // Default cursor
+                button.disabled = false; // Enable buttons when unlocked
+            }
+        });
+    }
+
+    updateCanvasLockStyle(); // Apply lock state styling
+});
+
+
+function updateCanvasLockStyle() {
+    if (isLocked) {
+        canvas.style.opacity = '0.7'; // Dim the canvas when locked
+        canvas.style.pointerEvents = 'none'; // Disable interaction with the canvas
+    } else {
+        canvas.style.opacity = '1'; // Restore normal opacity when unlocked
+        canvas.style.pointerEvents = 'auto'; // Enable interaction with the canvas
+    }
+}
+
+
 
 // Mouse Events
-canvas.addEventListener('mousedown', startDrawing);
-canvas.addEventListener('mousemove', draw);
-canvas.addEventListener('mouseup', stopDrawing);
-canvas.addEventListener('mouseout', stopDrawing);
+canvas.addEventListener('mousedown', (e) => {
+    if (isLocked) return; // Prevent drawing when locked
+    startDrawing(e);
+});
+
+canvas.addEventListener('mousemove', (e) => {
+    if (isLocked) return; // Prevent drawing when locked
+    draw(e);
+});
+
+canvas.addEventListener('mouseup', (e) => {
+    if (isLocked) return; // Prevent drawing when locked
+    stopDrawing(e);
+});
+
+canvas.addEventListener('mouseout', (e) => {
+    if (isLocked) return; // Prevent drawing when locked
+    stopDrawing(e);
+});
+
+// Initialize the lock state on page load
+document.addEventListener('DOMContentLoaded', () => {
+    updateCanvasLockStyle(); // Apply lock state styling on page load
+});
+
 
 // Drawing Logic
 function startDrawing(e) {
@@ -184,75 +252,6 @@ document.getElementById('sticky').addEventListener('click', () => {
         }
     });
 });
-
-
-
-// Zoom Functionality (Improved to restrict upward movement)
-document.getElementById('zoom-in').addEventListener('click', () => {
-    scale += 0.1;
-    updateCanvasTransform();
-});
-
-document.getElementById('zoom-out').addEventListener('click', () => {
-    scale = Math.max(0.5, scale - 0.1); // Prevent zooming out too far
-    updateCanvasTransform();
-});
-
-// Function to handle canvas transform and containment (no upward movement)
-function updateCanvasTransform() {
-    const container = document.getElementById('whiteboard-container');
-    const canvasRect = canvas.getBoundingClientRect();
-    const containerRect = container.getBoundingClientRect();
-
-    // Calculate offset for transformations
-    const offsetX = (containerRect.width - canvasRect.width * scale) / 2;
-    const offsetY = Math.max(0, (containerRect.height - canvasRect.height * scale) / 2);
-
-    // Apply transformations to the canvas
-    canvas.style.transform = `scale(${scale})`;
-    canvas.style.transformOrigin = 'top left'; // Transform origin adjusted
-    canvas.style.marginLeft = `${offsetX}px`;
-    canvas.style.marginTop = `${offsetY}px`;
-
-    // Adjust sticky notes
-    const stickyNotes = document.querySelectorAll('.sticky-note');
-    stickyNotes.forEach((note) => {
-        const originalLeft = parseFloat(note.dataset.originalLeft || note.offsetLeft);
-        const originalTop = parseFloat(note.dataset.originalTop || note.offsetTop);
-
-        note.style.left = `${originalLeft * scale}px`;
-        note.style.top = `${originalTop * scale}px`;
-        note.style.transform = `scale(${scale})`;
-        note.style.transformOrigin = 'top left';
-
-        // Store original positions for accurate scaling
-        if (!note.dataset.originalLeft) {
-            note.dataset.originalLeft = originalLeft;
-            note.dataset.originalTop = originalTop;
-        }
-    });
-
-    // Adjust text elements
-    const textElements = document.querySelectorAll('.text-tool');
-    textElements.forEach((textElement) => {
-        const originalLeft = parseFloat(textElement.dataset.originalLeft || textElement.offsetLeft);
-        const originalTop = parseFloat(textElement.dataset.originalTop || textElement.offsetTop);
-
-        textElement.style.left = `${originalLeft * scale}px`;
-        textElement.style.top = `${originalTop * scale}px`;
-        textElement.style.transform = `scale(${scale})`;
-        textElement.style.transformOrigin = 'top left';
-
-        // Store original positions for accurate scaling
-        if (!textElement.dataset.originalLeft) {
-            textElement.dataset.originalLeft = originalLeft;
-            textElement.dataset.originalTop = originalTop;
-        }
-    });
-}
-
-
-
 
 
 // Dark Mode Toggle
@@ -472,3 +471,189 @@ document.getElementById('download').addEventListener('click', () => {
     URL.revokeObjectURL(a.href);
 });
 
+// Select elements
+const deleteButton = document.getElementById('delete');
+
+
+// Clear function
+deleteButton.addEventListener('click', () => {
+    // Confirm before deleting
+    const confirmDelete = confirm("Are you sure you want to clear the canvas?");
+    if (!confirmDelete) return;
+
+    // Clear the canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Dynamically select and remove all text tool elements
+    document.querySelectorAll('.text-tool').forEach((textTool) => textTool.remove());
+
+    // Dynamically select and remove all sticky notes
+    document.querySelectorAll('.sticky-note').forEach((stickyNote) => stickyNote.remove());
+
+    alert("Canvas cleared!");
+});
+
+
+// User logout function
+
+let logout = document.getElementById('logout')
+
+function userlogOut() {
+
+    window.location.href = './logIn.html'
+}
+
+
+// Drawings
+let drawings = JSON.parse(localStorage.getItem('drawings')) || [];
+
+// Track the drawing being edited
+let currentEditingId = null;
+
+// Save the current drawing to localStorage
+document.addEventListener("DOMContentLoaded", function () {
+    // Generate unique IDs for drawings
+    function generateId() {
+        return Date.now();
+    }
+
+    // Save the current drawing
+    function saveDrawing() {
+        const canvas = document.getElementById('whiteboard');
+        if (!canvas) {
+            console.error("Canvas element not found!");
+            return;
+        }
+
+        const drawingData = canvas.toDataURL();
+
+        if (currentEditingId) {
+            // Update existing drawing
+            const drawingIndex = drawings.findIndex(drawing => drawing.id === currentEditingId);
+            if (drawingIndex !== -1) {
+                drawings[drawingIndex].data = drawingData;
+                console.log("Updated drawing with ID:", currentEditingId);
+            } else {
+                console.error("No drawing found to update with ID:", currentEditingId);
+            }
+        } else {
+            // Create a new drawing
+            const newDrawing = {
+                id: generateId(),
+                title: 'My Drawing',
+                data: drawingData,
+            };
+            drawings.push(newDrawing);
+            console.log("New drawing saved:", newDrawing);
+        }
+
+        // Save updated drawings to localStorage
+        try {
+            localStorage.setItem('drawings', JSON.stringify(drawings));
+        } catch (e) {
+            console.error("Failed to save drawings:", e);
+        }
+
+        // Reset editing state
+        currentEditingId = null;
+        loadDrawings();
+    }
+
+    // Clear the canvas for a new drawing
+    function newDrawing() {
+        const canvas = document.getElementById('whiteboard');
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+        currentEditingId = null; // Reset editing state
+        console.log("Canvas cleared for a new drawing.");
+    }
+
+    // Attach event listeners to buttons
+    document.getElementById('saveButton').onclick = saveDrawing;
+    document.getElementById('newDrawingButton').onclick = newDrawing;
+
+    // Initial load of drawings
+    loadDrawings();
+});
+
+// Load Drawings
+function loadDrawings() {
+    const storedDrawings = localStorage.getItem('drawings');
+    if (storedDrawings) {
+        drawings = JSON.parse(storedDrawings);
+    }
+    displayDrawings(drawings);
+}
+
+// Display Drawings
+function displayDrawings(drawings) {
+    const drawingList = document.getElementById('drawingList');
+    drawingList.innerHTML = '';
+
+    drawings.forEach(drawing => {
+        console.log(drawing);
+        const listItem = document.createElement('li');
+        // listItem.textContent = drawing.title;
+        
+        let img = document.createElement('img');
+        img.src = drawing.data; // Set the source of the image to the drawing's data
+        img.alt = 'Drawing'; // Set alt text for accessibility
+        img.className = 'drawing-image'; // Add a class name to the image
+
+        const editButton = document.createElement('button');
+        editButton.textContent = 'Edit';
+        img.id = 'edit-image'
+
+        editButton.addEventListener('click', () => {
+            loadDrawingForEdit(drawing.id);
+        });
+
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Delete';
+        img.id = 'delete-image'
+
+        deleteButton.addEventListener('click', () => {
+            deleteDrawing(drawing.id);
+        });
+         
+        listItem.appendChild(img)
+        listItem.appendChild(editButton);
+        listItem.appendChild(deleteButton);
+        drawingList.appendChild(listItem);
+    });
+}
+
+// Load Drawing for Editing
+function loadDrawingForEdit(drawingId) {
+    const drawingToEdit = drawings.find(drawing => drawing.id === drawingId);
+    if (!drawingToEdit) {
+        console.error("Drawing not found for ID:", drawingId);
+        return;
+    }
+
+    const canvas = document.getElementById('whiteboard');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+
+    img.onload = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear existing content
+        ctx.drawImage(img, 0, 0);
+    };
+
+    img.src = drawingToEdit.data;
+    currentEditingId = drawingId; // Set the current editing ID
+    console.log(`Loaded drawing with ID: ${drawingId}`);
+}
+
+// Delete Drawing
+function deleteDrawing(drawingId) {
+    const index = drawings.findIndex(drawing => drawing.id === drawingId);
+    if (index !== -1) {
+        drawings.splice(index, 1);
+        localStorage.setItem('drawings', JSON.stringify(drawings));
+        loadDrawings();
+    }
+}
+
+// Initial Load
+loadDrawings();

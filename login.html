@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Arial", sans-serif;
+        background: linear-gradient(135deg, #09030f, #2575fc);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .form-container {
+        background-image: url('image.png');
+        border-radius: 15px;
+        padding: 40px;
+        width: 100%;
+        max-width: 450px;
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+        z-index: 5;
+      }
+      
+      .form-container form {
+        background-color: #fff;
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+      }
+
+      .form-container h2 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 10px;
+        font-size: 2rem;
+      }
+
+      label {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: #333;
+      }
+
+      input[type="email"],
+      input[type="password"] {
+        width: 100%;
+        padding: 18px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 18px;
+        transition: border-color 0.3s;
+      }
+
+      input[type="email"]:focus,
+      input[type="password"]:focus {
+        border-color: #4facfe;
+        outline: none;
+      }
+
+      input[type="submit"] {
+        background: #4facfe;
+        color: #fff;
+        padding: 18px;
+        border: none;
+        border-radius: 5px;
+        font-size: 20px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+
+      input[type="submit"]:hover {
+        background: #00c6ff;
+      }
+
+      .form-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .form-footer a {
+        text-decoration: none;
+        font-size: 18px;
+        color: #4facfe;
+        font-weight: bold;
+        transition: color 0.3s;
+      }
+
+      .form-footer a:hover {
+        color: #2b00ff;
+      }
+
+      @media (max-width: 768px) {
+        .form-container {
+          padding: 40px;
+        }
+
+        input[type="email"],
+        input[type="password"] {
+          font-size: 16px;
+        }
+
+        input[type="submit"] {
+          font-size: 18px;
+        }
+
+        .form-footer a {
+          font-size: 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="form-container">
+      <form id="loginForm">
+        <h2>Login</h2>
+
+        <div>
+          <label for="email">Email: </label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            placeholder="Enter Email..."
+          />
+        </div>
+
+        <div>
+          <label for="password">Password:</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Enter Password..."
+          />
+        </div>
+
+        <div class="form-footer">
+          <input type="submit" value="Login" />
+          <a href="./signup.html">Sign Up</a>
+        </div>
+      </form>
+    </div>
+    <script>
+      let loginForm = document.getElementById("loginForm");
+      let email = document.getElementById("email");
+      let password = document.getElementById("password");
+
+      loginForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+
+        let userEmail = email.value;
+        let userPassword = password.value;
+
+        if (!userEmail || !userPassword) {
+          alert("Please fill out all fields.");
+          return;
+        }
+
+        userLogin(userEmail, userPassword);
+      });
+
+      async function userLogin(email, password) {
+        try {
+          let response = await fetch(
+            `https://whiteboard-application-f3c2c-default-rtdb.firebaseio.com/users.json`
+          );
+          let data = await response.json();
+
+          let findUser = Object.values(data).find(
+            (user) => user.email === email && user.password === password
+          );
+
+          if (findUser) {
+            window.location.href = `/home.html`;
+          } else {
+            alert("Invalid email or password. Please try again.");
+          }
+        } catch (error) {
+          console.error("Error: ", error);
+        }
+      }
+    </script>
+  </body>
+</html>
