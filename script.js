@@ -500,7 +500,7 @@ let logout = document.getElementById('logout')
 
 function userlogOut() {
 
-    window.location.href = './logIn.html'
+    window.location.href = './index.html'
 }
 
 
