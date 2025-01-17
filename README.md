@@ -78,3 +78,5 @@ cd Mind-Board
 1.Repository Link: https://github.com/jagannathking/Mind-Board
 
 2.Deployed Link: https://joyful-arithmetic-adb115.netlify.app/ 
+
+## Thanks for visiting...
